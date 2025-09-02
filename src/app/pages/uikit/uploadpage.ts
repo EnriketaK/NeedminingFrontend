@@ -43,7 +43,7 @@ export class UploadPage {
         private postService: PostService
     ) {}
 
- onUpload(event: { files: File[] }, uploader: FileUpload) {
+    onUpload(event: { files: File[] }, uploader: FileUpload) {
         const files: File[] = event.files;
 
 
