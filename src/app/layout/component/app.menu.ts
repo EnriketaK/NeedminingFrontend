@@ -29,6 +29,7 @@ export class AppMenu {
                 items: [
                     { label: 'Upload', icon: 'pi pi-fw pi-file', routerLink: ['/uikit/upload'] },
                     { label: 'Posts', icon: 'pi pi-fw pi-list', routerLink: ['/uikit/posts'] },
+                    { label: 'Needs', icon: 'pi pi-fw pi-table', routerLink: ['/uikit/needs'] },
                     { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', routerLink: ['/uikit/formlayout'] },
                     { label: 'Input', icon: 'pi pi-fw pi-check-square', routerLink: ['/uikit/input'] },
                     { label: 'Button', icon: 'pi pi-fw pi-mobile', class: 'rotated-icon', routerLink: ['/uikit/button'] },

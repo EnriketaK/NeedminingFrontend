@@ -16,10 +16,12 @@ import { TreeDemo } from './treedemo';
 import { MenuDemo } from './menudemo';
 import { PostsPage } from '@/pages/uikit/postspage';
 import { UploadPage } from '@/pages/uikit/uploadpage';
+import { NeedsPage } from '@/pages/uikit/needspage';
 
 export default [
     { path: 'upload', data: { breadcrumb: 'Upload' }, component: UploadPage },
     { path: 'posts', data: { breadcrumb: 'Posts' }, component: PostsPage },
+    { path: 'needs', data: { breadcrumb: 'Needs' }, component: NeedsPage },
     { path: 'button', data: { breadcrumb: 'Button' }, component: ButtonDemo },
     { path: 'charts', data: { breadcrumb: 'Charts' }, component: ChartDemo },
     { path: 'file', data: { breadcrumb: 'File' }, component: FileDemo },
