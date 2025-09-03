@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient,HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -20,6 +20,10 @@ export class ApiService {
 
   put<T>(endpoint: string, body: any): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}/${endpoint}`, body);
+  }
+
+  patch<T>(endpoint: string, body: any, options?: { params?: HttpParams }): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, body, options);
   }
 
   delete<T>(endpoint: string): Observable<T> {
