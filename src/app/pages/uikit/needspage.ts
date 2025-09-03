@@ -17,11 +17,12 @@ import {FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Chip } from 'primeng/chip';
+import {Router, RouterLink,RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-needs-page',
     standalone: true,
-    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, Chip],
+    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, Chip, RouterModule],
     template: ` <p-toast />
 
         <div class="flex flex-col">
@@ -56,7 +57,15 @@ import { Chip } from 'primeng/chip';
                                     <div class="pt-12">
                                         <div class="flex flex-row justify-between items-start gap-2">
                                             <div>
-                                                <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">Go to post: {{ item.post.title }}</span>
+                                                <!--                                                <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">Go to post: {{ item.post.title }}</span>-->
+
+<!--                                                <a routerLink='/uikit/postdetail' class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
+<!--                                                <a [routerLink]="['/uikit/postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
+                                                <a [routerLink]="['/uikit', 'postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>
+<!--                                                <a [routerLink]="['/postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
+<!--                                                <a (click)="router.navigate(['/postdetail', item.post.id])" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
+<!--                                                <a (click)="router.navigate(['/postdetail'])" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
+
                                                 <div class="text-lg font-medium mt-1">
                                                     {{ item.content }}
                                                 </div>
@@ -79,11 +88,7 @@ import { Chip } from 'primeng/chip';
                                         </div>
                                         <div class="flex flex-col gap-6 mt-6">
                                             <div class="flex flex-wrap gap-2">
-                                                        <p-tag
-                                                            *ngFor="let category of item.categories"
-                                                            [value]="category.title"
-                                                            [style]="{ 'background-color': category.color, 'color': getTextColor(category.color) }"
-                                                        />
+                                                <p-tag *ngFor="let category of item.categories" [value]="category.title" [style]="{ 'background-color': category.color, color: getTextColor(category.color) }" />
                                             </div>
                                         </div>
                                     </div>
@@ -101,7 +106,7 @@ import { Chip } from 'primeng/chip';
             }
         }
     `,
-    providers: [MessageService, NeedService]
+    providers: [MessageService]
 })
 export class NeedsPage {
     layout: 'list' | 'grid' = 'grid';
@@ -115,13 +120,16 @@ export class NeedsPage {
 
     firstPage = 0;
 
+    // postId!: number;
+
     constructor(
         private needService: NeedService,
-        private messageService: MessageService
+        protected router: Router
     ) {}
 
     ngOnInit() {
         this.loadNeeds();
+        // this.postId = Number(this.route.snapshot.paramMap.get('id'));
     }
 
     loadNeeds() {
@@ -151,10 +159,8 @@ export class NeedsPage {
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
 
         return luminance <= 186 ? 'white' : 'black';
-
     }
-
 }

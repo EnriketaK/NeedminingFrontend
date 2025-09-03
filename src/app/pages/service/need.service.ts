@@ -33,7 +33,7 @@ export class NeedService {
   }
 
   getNeedById(id: number): Observable<Need> {
-    return this.api.get<Need>(`${this.baseEndpoint}/${id}`);
+    return this.api.get<Need>(`${this.baseEndpoint}/get/${id}`);
   }
 
 

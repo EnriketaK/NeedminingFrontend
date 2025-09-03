@@ -16,11 +16,12 @@ import { Toolbar } from 'primeng/toolbar';
 import {FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { Router,RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-posts-page',
     standalone: true,
-    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule],
+    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, RouterModule],
     template: ` <p-toast />
         <div class="mb-6">
             <div class="col-span-full lg:col-span-12">
@@ -75,7 +76,8 @@ import { MessageService } from 'primeng/api';
                                         <div class="flex flex-row md:flex-col justify-between items-start gap-2">
                                             <!--                                    <div class="flex flex-row md:flex-col justify-between items-start gap-2">-->
                                             <div>
-                                                <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">{{ item.submissionId }}</span>
+                                            <a [routerLink]="['/uikit', 'postdetail', item.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.submissionId }}</a>
+<!--                                                <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">{{ item.submissionId }}</span>-->
                                                 <div class="text-lg font-medium mt-2">{{ item.title }}</div>
                                                 <div class="text-lg font-medium mt-2">{{ item.text }}</div>
                                             </div>
@@ -117,7 +119,7 @@ import { MessageService } from 'primeng/api';
             }
         }
     `,
-    providers: [MessageService, PostService]
+    providers: [MessageService]
 })
 export class PostsPage {
     layout: 'list' | 'grid' = 'list';
@@ -133,7 +135,8 @@ export class PostsPage {
 
     constructor(
         private postService: PostService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        public router: Router
     ) {}
 
     ngOnInit() {
