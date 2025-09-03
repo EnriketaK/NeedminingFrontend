@@ -12,15 +12,17 @@ import { Post,PostService } from '@/pages/service/post.service';
 import { Tag,TagModule } from 'primeng/tag';
 import {CommonModule, DatePipe } from '@angular/common';
 import { Menu } from 'primeng/menu';
-import { MessageService } from 'primeng/api';
+import {MenuItem, MessageService } from 'primeng/api';
 import { SplitButton } from 'primeng/splitbutton';
 import { Toast } from 'primeng/toast';
+import { Category,CategoryService } from '@/pages/service/category.service';
 
 @Component({
     selector: 'app-post-detail',
     standalone: true,
     imports: [InputTextModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, RouterModule, Tag, DatePipe, CommonModule, TagModule, Menu, SplitButton, Toast],
-    template: ` <p-toast />
+    template: `
+  <p-toast />
         <p-fluid>
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="md:w-1/2">
@@ -82,27 +84,37 @@ import { Toast } from 'primeng/toast';
 
                             <div class="flex flex-wrap gap-2 mt-2">
                                 <p-button *ngIf="!need.isAccepted" label="Accept" (click)="onAcceptNeed(need.id)" />
+
+                                <p-button
+                                    *ngIf="!editingNeeds[need.id]"
+                                    label="Edit"
+                                    (click)="onStartEdit(need)"
+                                ></p-button>
+
+                                <p-splitbutton
+                                  *ngIf="editingNeeds[need.id]"
+                                  label="Save"
+                                  (onClick)="onSaveEdit(need)"
+                                  [model]="trackEditMenuByNeed[need.id]"
+                                ></p-splitbutton>
+
+                                <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
+
+                                <button
+                                    type="button"
+                                    pButton
+                                    (click)="onShowCategoryMenu(need, menu, $event)"
+                                    style="width:auto"
+                                >
+                                Categorize
+                                <i class="pi pi-chevron-down"></i>
+                                </button>
+
                                 <p-button label="Delete" severity="danger" (click)="onDeleteNeed(need.id)" />
 
-                                <p-button [label]="editingNeeds[need.id] ? 'Save' : 'Edit'" (click)="onToggleEdit(need)" />
-
-                                <p-menu #menu [popup]="true" [model]="overlayMenuItems"></p-menu>
-                                <button type="button" pButton icon="pi pi-chevron-down" label="Categorize" (click)="menu.toggle($event)" style="width:auto"></button>
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-2">
-                            <!--                        <textarea id="description" pTextarea [(ngModel)]="need.content" required rows="3" cols="20" fluid></textarea>-->
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <!--                        <textarea id="description" pTextarea [(ngModel)]="need.content" required rows="3" cols="20" fluid></textarea>-->
-                        </div>
-
-                        <div class="flex flex-col gap-6 mt-6">
-                            <div class="flex flex-wrap gap-2">
-                                <!--                        <p-tag *ngFor="let category of need.categories" [value]="category.title" [style]="{ 'background-color': category.color, color: getTextColor(category.color) }" />-->
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -114,31 +126,24 @@ export class PostDetail implements OnDestroy {
     needs: Need[] = [];
     editingNeeds: { [needId: number]: boolean } = {};
 
-    overlayMenuItems = [
-        {
-            label: 'Save'
-        },
-        {
-            label: 'Update'
-        },
-        {
-            label: 'Delete'
-        },
-        {
-            label: 'Home'
-        }
-    ];
+    allCategories: { label: string; command: () => void }[] = [];
+    selectedNeedForCat!: Need;
 
     private destroy$ = new Subject<void>();
 
     @ViewChildren('needTextarea', { read: ElementRef })
     textareas!: QueryList<ElementRef<HTMLTextAreaElement>>;
 
+    private ogNeedText: { [needId: number]: string } = {};
+    trackEditMenuByNeed: Record<number, MenuItem[]> = {};
+
+
     constructor(
         private postService: PostService,
         private needService: NeedService,
         private route: ActivatedRoute,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private categoryService: CategoryService,
     ) {}
 
     ngOnInit() {
@@ -154,7 +159,26 @@ export class PostDetail implements OnDestroy {
                 this.post = post;
                 this.loadNeeds();
             });
+
+        this.categoryService.getAllCategories().subscribe({
+            next: (categories) => {
+                this.allCategories = categories.map((cat) => ({
+                    label: cat.title,
+                    command: () => this.assignCategory(this.selectedNeedForCat, cat.id)
+                }));
+            },
+            error: (err) => {
+                console.error('Error loading categories:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to load categories'
+                });
+            }
+        });
+
     }
+
 
     ngAfterViewInit() {
         setTimeout(() => this.resizeAll());
@@ -214,11 +238,11 @@ export class PostDetail implements OnDestroy {
                 },
                 error: (err) => {
                     console.error('Error accepting need:', err);
-                    // this.messageService.add({
-                    //     severity: 'error',
-                    //     summary: 'Error',
-                    //     detail: 'Failed to accept need'
-                    // });
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to accept need'
+                    });
                 }
             });
     }
@@ -230,11 +254,12 @@ export class PostDetail implements OnDestroy {
             .subscribe({
                 next: () => {
                     this.loadNeeds();
-                    // this.messageService.add({
-                    //     severity: 'success',
-                    //     summary: 'Success',
-                    //     detail: 'Need is deleted successfully'
-                    // });
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Need is deleted successfully'
+                    });
                 },
                 error: (err) => {
                     console.error('Error deleting need:', err);
@@ -247,51 +272,98 @@ export class PostDetail implements OnDestroy {
             });
     }
 
-    onToggleEdit(need: Need) {
-        const isEditing = this.editingNeeds[need.id];
-        console.log('isEditing1');
-        console.log(isEditing);
+    onStartEdit(need: Need) {
+        this.editingNeeds[need.id] = true;
+        this.ogNeedText[need.id] = need.content;
 
-        if (isEditing) {
-            this.needService
-                .editContent(need.id, need.content)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe({
-                    next: () => {
-                        this.editingNeeds[need.id] = false;
-                        console.log('isEditing2');
-                        console.log(isEditing);
-                        // this.messageService.add({
-                        //     severity: 'success',
-                        //     summary: 'Success',
-                        //     detail: 'Need updated successfully'
-                        // });
-                        this.loadNeeds();
-                    },
-                    error: (err) => {
-                        console.error('Error saving content:', err);
-                        this.messageService.add({
-                            severity: 'error',
-                            summary: 'Error',
-                            detail: 'Failed to update need'
-                        });
-                    }
-                });
-        } else {
-            this.editingNeeds[need.id] = true;
-            console.log('isEditing3');
-            console.log(isEditing);
-        }
+        //just in case
+        setTimeout(() => this.resizeAll());
+
+        this.trackEditMenuByNeed[need.id] = [
+          {
+            label: 'Discard changes',
+            command: () => this.onDiscardChanges(need),
+          },
+        ];
+
+      }
+
+      onSaveEdit(need: Need) {
+        this.onToggleEdit(need);
     }
 
-    getTextColor(hex: string): string {
-        hex = hex.replace('#', '');
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      onDiscardChanges(need: Need) {
+        if (this.ogNeedText.hasOwnProperty(need.id)) {
+          need.content = this.ogNeedText[need.id];
+        }
+        delete this.editingNeeds[need.id];
+        delete this.ogNeedText[need.id];
+        delete this.trackEditMenuByNeed[need.id];
+        setTimeout(() => this.resizeAll());
+      }
 
-        return luminance <= 186 ? 'white' : 'black';
+      onToggleEdit(need: Need) {
+        // const isEditing = this.editingNeeds[need.id];
+
+        // if (isEditing) {
+          this.needService.editContent(need.id, need.content)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: () => {
+                delete this.editingNeeds[need.id];
+                delete this.ogNeedText[need.id];
+                delete this.trackEditMenuByNeed[need.id];
+                this.messageService.add({
+                  severity: 'success',
+                  summary: 'Success',
+                  detail: 'Need updated successfully'
+                });
+                this.loadNeeds();
+              },
+              error: (err) => {
+                console.error('Error saving content:', err);
+                this.messageService.add({
+                  severity: 'error',
+                  summary: 'Error',
+                  detail: 'Failed to update need'
+                });
+              }
+            });
+        // } else {
+        //   // optional if its still used somewhere else
+        //   this.onStartEdit(need);
+        // }
+      }
+
+
+
+    onShowCategoryMenu(need: Need, menu: any, event: MouseEvent) {
+        this.selectedNeedForCat = need;
+        menu.toggle(event);
+    }
+
+    assignCategory(need: Need, categoryId: number) {
+        this.needService
+            .assignCategoryToNeed(need.id, categoryId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.loadNeeds();
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Category added',
+                        detail: 'The category was successfully added to the need.'
+                    });
+                },
+                error: (err) => {
+                    console.error('Error adding category:', err);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to add category'
+                    });
+                }
+            });
     }
 
     onRemoveCategory(need: Need, categoryId: number, event?: MouseEvent) {
@@ -305,11 +377,11 @@ export class PostDetail implements OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: () => {
-                    // this.messageService.add({
-                    //     severity: 'success',
-                    //     summary: 'Category removed',
-                    //     detail: 'The category was removed from the need.'
-                    // });
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Category removed',
+                        detail: 'The category was removed from the need.'
+                    });
                 },
                 error: (err) => {
                     console.error('Error removing category:', err);
@@ -323,7 +395,17 @@ export class PostDetail implements OnDestroy {
             });
     }
 
-    private resizeAll() {
+    getTextColor(hex: string): string {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        return luminance <= 186 ? 'white' : 'black';
+    }
+
+    resizeAll() {
         this.textareas?.forEach((ref) => this.resizeOne(ref));
     }
 

@@ -3,12 +3,8 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Post } from '@/pages/service/post.service';
+import { Category } from '@/pages/service/category.service';
 
-export interface Category {
-  id: number;
-  title: string;
-  color: string;
-}
 
 export interface Need {
   id: number;
