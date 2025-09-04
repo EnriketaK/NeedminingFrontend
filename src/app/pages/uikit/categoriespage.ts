@@ -15,13 +15,21 @@ import {Table, TableModule } from 'primeng/table';
 import { Toolbar } from 'primeng/toolbar';
 import {FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import {MenuItem, MessageService } from 'primeng/api';
 import { Chip } from 'primeng/chip';
 import {Router, RouterLink,RouterModule } from '@angular/router';
 import {Category, CategoryService } from '@/pages/service/category.service';
 import { ColorPicker } from 'primeng/colorpicker';
 import { Post } from '@/pages/service/post.service';
 import { Menubar } from 'primeng/menubar';
+import { InputGroup } from 'primeng/inputgroup';
+import { Checkbox } from 'primeng/checkbox';
+import { Fluid } from 'primeng/fluid';
+import { InputGroupAddon } from 'primeng/inputgroupaddon';
+import { InputNumber } from 'primeng/inputnumber';
+import { SplitButton } from 'primeng/splitbutton';
+import { Tooltip } from 'primeng/tooltip';
+import { Menu } from 'primeng/menu';
 
 @Component({
     selector: 'app-categories-page',
@@ -45,29 +53,35 @@ import { Menubar } from 'primeng/menubar';
         Chip,
         RouterModule,
         ColorPicker,
-        Menubar
+        Menubar,
+        InputGroup,
+        Checkbox,
+        Fluid,
+        InputGroupAddon,
+        InputNumber,
+        SplitButton,
+        Tooltip,
+        Menu
     ],
-    template: `
-        <p-toast />
+    template: ` <p-toast />
         <div class="mb-6">
             <div class="col-span-full lg:col-span-12">
                 <div class="card">
                     <div class="font-semibold text-xl mb-4">Create Category</div>
 
                     <div class="flex flex-wrap items-start gap-6">
-                        <div class="grid grid-cols-12 gap-4 grid-cols-12 gap-2">
+                        <div class="inline-flex gap-4">
                             <label for="name" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Name</label>
                             <div class="col-span-12 md:col-span-10">
                                 <input pInputText id="name" type="text" [(ngModel)]="categoryName" [ngClass]="{ 'ng-dirty ng-invalid': isNameInvalid }" />
                             </div>
-                        </div>
-                        <div class="grid grid-cols-12 gap-2 grid-cols-12 gap-2">
+
                             <label for="colorPicker" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Tag Color</label>
                             <div class="col-span-12 md:col-span-10">
                                 <p-colorpicker id="colorPicker" [style]="{ width: '2rem' }" [(ngModel)]="colorValue" />
                             </div>
+                            <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
                         </div>
-                        <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
                     </div>
                 </div>
             </div>
@@ -84,18 +98,38 @@ import { Menubar } from 'primeng/menubar';
                 </div>
 
                 <div class="flex flex-wrap gap-2 mt-2">
-                    <p-tag
-                        *ngFor="let category of filteredCategories"
-                        [style]="{
-                            'background-color': category.color,
-                            color: getTextColor(category.color)
-                        }"
-                        rounded
-                        class="text-surface-900 font-medium text-sm"
-                    >
-                        {{ category.title }}
-                        <i class="pi pi-times cursor-pointer" (click)="onDeleteCategory(category.id, $event)" title="Delete category"></i>
-                    </p-tag>
+<div
+    class="inline-flex gap-4 p-4 border rounded mb-2 items-center"
+    *ngFor="let category of filteredCategories"
+>
+    <input
+        pInputText
+        type="text"
+        [(ngModel)]="category.title"
+        [readonly]="!editing[category.id]"
+        placeholder="Category Name"
+        pTooltip="Category Name"
+        style="width: 200px;"
+            [style]="{
+                'background-color': category.color,
+                color: getTextColor(category.color),
+                'font-weight': 'bold'
+            }"
+    />
+
+    <p-splitbutton
+        (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)"
+        [label]="editing[category.id] ? 'Save' : 'Edit'"
+        [model]="editBtnMenus[category.id]"
+        style="width: 100px;"
+    ></p-splitbutton>
+</div>
+
+
+                    <div class="inline-flex gap-4 p-4 border rounded mb-2">
+                        <input pInputText type="text" placeholder="Category Name" pTooltip="Category Name" />
+                        <p-splitbutton label="Edit" [model]="items"></p-splitbutton>
+                    </div>
                 </div>
             </div>
         </div>`,
@@ -110,16 +144,16 @@ import { Menubar } from 'primeng/menubar';
 })
 export class CategoriesPage {
     categories: Category[] = [];
-
     filteredCategories: Category[] = [];
-
     globalFilter: string = '';
-
     colorValue: string = '#1976D2';
-
     categoryName: string = '';
-
     isNameInvalid: boolean = false;
+    items: MenuItem[] = [];
+
+    editing: { [categoryId: number]: boolean } = {};
+    ogTitles: { [categoryId: number]: string } = {};
+    editBtnMenus: { [categoryId: number]: MenuItem[] } = {};
 
     constructor(
         private messageService: MessageService,
@@ -128,6 +162,7 @@ export class CategoriesPage {
 
     ngOnInit() {
         this.loadCategories();
+        this.items = [{ label: 'Delete', icon: 'pi pi-times' }];
     }
 
     loadCategories() {
@@ -137,6 +172,19 @@ export class CategoriesPage {
                 console.log('data');
                 console.log(data);
                 this.filteredCategories = [...data];
+
+                for (const cat of data) {
+                if (!this.editing[cat.id]) {
+                    this.editBtnMenus[cat.id] = [
+                        {
+                            label: 'Delete',
+                            icon: 'pi pi-trash',
+                            command: () => this.onDeleteCategory(cat.id)
+                        }
+                    ];
+                }
+            }
+
             },
             error: (err) => {
                 console.error('Error loading categories:', err);
@@ -145,30 +193,6 @@ export class CategoriesPage {
                     summary: 'Error',
                     detail: 'Failed to load categories'
                 });
-            }
-        });
-    }
-
-    onDeleteCategory(id: number, event: MouseEvent) {
-        event.stopPropagation();
-        this.categoryService.deleteCategoryById(id).subscribe({
-            next: () => {
-                this.categories = this.categories.filter((c) => c.id !== id);
-                this.filteredCategories = this.filteredCategories.filter((c) => c.id !== id);
-
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Deleted',
-                    detail: 'Category deleted successfully'
-                });
-            },
-            error: (err) => {
-                console.error('Error deleting category:', err);
-                // this.messageService.add({
-                //     severity: 'error',
-                //     summary: 'Error',
-                //     detail: 'Failed to delete category'
-                // });
             }
         });
     }
@@ -207,6 +231,105 @@ export class CategoriesPage {
         const query = (event.target as HTMLInputElement).value.toLowerCase();
         this.filteredCategories = this.categories.filter((category) => category.title?.toLowerCase().includes(query));
     }
+
+
+onStartEdit(category: Category) {
+    this.ogTitles[category.id] = category.title;
+    this.editing[category.id] = true;
+
+    this.editBtnMenus[category.id] = [
+        {
+            label: 'Discard changes',
+            icon: 'pi pi-times',
+            command: () => this.onDiscardChanges(category)
+        }
+    ];
+}
+
+
+onSaveEdit(category: Category) {
+    if (!category.title.trim()) {
+        this.messageService.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'Category title cannot be empty'
+        });
+        return;
+    }
+
+    this.categoryService.updateCategoryTitle(category.id, category.title.trim()).subscribe({
+        next: () => {
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Updated',
+                detail: `Category updated successfully`
+            });
+
+            delete this.ogTitles[category.id];
+            delete this.editing[category.id];
+
+            this.editBtnMenus[category.id] = [
+                {
+                    label: 'Delete',
+                    icon: 'pi pi-trash',
+                    command: () => this.onDeleteCategory(category.id)
+                }
+            ];
+
+            this.loadCategories();
+        },
+        error: (err) => {
+            console.error('Error updating category:', err);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to update category'
+            });
+        }
+    });
+}
+
+onDiscardChanges(category: Category) {
+    if (this.ogTitles.hasOwnProperty(category.id)) {
+        category.title = this.ogTitles[category.id];
+    }
+
+    delete this.editing[category.id];
+    delete this.ogTitles[category.id];
+
+    this.editBtnMenus[category.id] = [
+        {
+            label: 'Delete',
+            icon: 'pi pi-trash',
+            command: () => this.onDeleteCategory(category.id)
+        }
+    ];
+}
+
+
+        onDeleteCategory(id: number, event?: MouseEvent) {
+            if (event) event.stopPropagation();
+
+            this.categoryService.deleteCategoryById(id).subscribe({
+                next: () => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Deleted',
+                        detail: 'Category deleted successfully'
+                    });
+                    this.loadCategories();
+                },
+                error: (err) => {
+                    console.error('Error deleting category:', err);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to delete category'
+                    });
+                }
+            });
+        }
+
 
     getTextColor(hex: string): string {
         hex = hex.replace('#', '');
