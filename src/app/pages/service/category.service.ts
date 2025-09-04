@@ -3,11 +3,13 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Post } from '@/pages/service/post.service';
+import { Need } from '@/pages/service/need.service';
 
 export interface Category {
   id: number;
   title: string;
   color: string;
+  needsCount: number;
 }
 
 @Injectable({

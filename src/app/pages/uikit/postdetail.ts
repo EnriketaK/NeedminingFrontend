@@ -101,6 +101,7 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                                 <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
 
                                 <button
+                                    *ngIf="need.isAccepted"
                                     type="button"
                                     pButton
                                     (click)="onShowCategoryMenu(need, menu, $event)"

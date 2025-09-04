@@ -21,6 +21,7 @@ import {Router, RouterLink,RouterModule } from '@angular/router';
 import {Category, CategoryService } from '@/pages/service/category.service';
 import { ColorPicker } from 'primeng/colorpicker';
 import { Post } from '@/pages/service/post.service';
+import { Menubar } from 'primeng/menubar';
 
 @Component({
     selector: 'app-categories-page',
@@ -43,7 +44,8 @@ import { Post } from '@/pages/service/post.service';
         ToastModule,
         Chip,
         RouterModule,
-        ColorPicker
+        ColorPicker,
+        Menubar
     ],
     template: `
         <p-toast />
@@ -53,30 +55,19 @@ import { Post } from '@/pages/service/post.service';
                     <div class="font-semibold text-xl mb-4">Create Category</div>
 
                     <div class="flex flex-wrap items-start gap-6">
-
-
-
-                                            <div class="grid grid-cols-12 gap-4 grid-cols-12 gap-2">
-                                                <label for="name" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Name</label>
-                                                <div class="col-span-12 md:col-span-10">
-                                                    <input
-                                                      pInputText
-                                                      id="name"
-                                                      type="text"
-                                                      [(ngModel)]="categoryName"
-                                                      [ngClass]="{ 'ng-dirty ng-invalid': isNameInvalid }"
-                                                    />
-
-                                                </div>
-                                            </div>
-                                            <div class="grid grid-cols-12 gap-2 grid-cols-12 gap-2">
-                                                <label for="colorPicker" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Tag Color</label>
-                                                <div class="col-span-12 md:col-span-10">
-                                                    <p-colorpicker id="colorPicker" [style]="{ width: '2rem' }" [(ngModel)]="colorValue" />
-                                                </div>
-                                            </div>
-                                            <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
-
+                        <div class="grid grid-cols-12 gap-4 grid-cols-12 gap-2">
+                            <label for="name" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Name</label>
+                            <div class="col-span-12 md:col-span-10">
+                                <input pInputText id="name" type="text" [(ngModel)]="categoryName" [ngClass]="{ 'ng-dirty ng-invalid': isNameInvalid }" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-12 gap-2 grid-cols-12 gap-2">
+                            <label for="colorPicker" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Tag Color</label>
+                            <div class="col-span-12 md:col-span-10">
+                                <p-colorpicker id="colorPicker" [style]="{ width: '2rem' }" [(ngModel)]="colorValue" />
+                            </div>
+                        </div>
+                        <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
                     </div>
                 </div>
             </div>
@@ -92,22 +83,20 @@ import { Post } from '@/pages/service/post.service';
                     </p-iconfield>
                 </div>
 
-
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <p-tag
-                                    *ngFor="let category of filteredCategories"
-                                    [style]="{
-                                        'background-color': category.color,
-                                        color: getTextColor(category.color)
-                                    }"
-                                    rounded
-                                    class="text-surface-900 font-medium text-sm"
-                                >
-                                    {{ category.title }}
-                                    <i class="pi pi-times cursor-pointer" (click)="onDeleteCategory(category.id, $event)" title="Delete category"></i>
-                                </p-tag>
-                            </div>
-
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <p-tag
+                        *ngFor="let category of filteredCategories"
+                        [style]="{
+                            'background-color': category.color,
+                            color: getTextColor(category.color)
+                        }"
+                        rounded
+                        class="text-surface-900 font-medium text-sm"
+                    >
+                        {{ category.title }}
+                        <i class="pi pi-times cursor-pointer" (click)="onDeleteCategory(category.id, $event)" title="Delete category"></i>
+                    </p-tag>
+                </div>
             </div>
         </div>`,
     styles: `
@@ -120,7 +109,6 @@ import { Post } from '@/pages/service/post.service';
     providers: [MessageService]
 })
 export class CategoriesPage {
-
     categories: Category[] = [];
 
     filteredCategories: Category[] = [];
@@ -135,7 +123,8 @@ export class CategoriesPage {
 
     constructor(
         private messageService: MessageService,
-        private categoryService: CategoryService) {}
+        private categoryService: CategoryService
+    ) {}
 
     ngOnInit() {
         this.loadCategories();
@@ -145,6 +134,8 @@ export class CategoriesPage {
         this.categoryService.getAllCategories().subscribe({
             next: (data) => {
                 this.categories = data;
+                console.log('data');
+                console.log(data);
                 this.filteredCategories = [...data];
             },
             error: (err) => {
@@ -162,8 +153,8 @@ export class CategoriesPage {
         event.stopPropagation();
         this.categoryService.deleteCategoryById(id).subscribe({
             next: () => {
-                this.categories = this.categories.filter(c => c.id !== id);
-                this.filteredCategories = this.filteredCategories.filter(c => c.id !== id);
+                this.categories = this.categories.filter((c) => c.id !== id);
+                this.filteredCategories = this.filteredCategories.filter((c) => c.id !== id);
 
                 this.messageService.add({
                     severity: 'success',
@@ -188,13 +179,12 @@ export class CategoriesPage {
             return;
         }
 
-        this.categoryService.createCategory(this.categoryName, this.colorValue)
-        .subscribe({
+        this.categoryService.createCategory(this.categoryName, this.colorValue).subscribe({
             next: (newCategory) => {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Success',
-                    detail: `Category "${newCategory.title}" created successfully`,
+                    detail: `Category "${newCategory.title}" created successfully`
                 });
                 this.categoryName = '';
                 this.colorValue = '#1976D2';
@@ -207,12 +197,11 @@ export class CategoriesPage {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'Failed to create category',
+                    detail: 'Failed to create category'
                 });
             }
         });
     }
-
 
     onGlobalFilter(event: Event) {
         const query = (event.target as HTMLInputElement).value.toLowerCase();
