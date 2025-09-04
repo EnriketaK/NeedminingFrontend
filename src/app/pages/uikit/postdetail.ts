@@ -1,7 +1,7 @@
 import { Component,ElementRef,OnDestroy,QueryList,ViewChildren } from '@angular/core';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import {Button, ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import {Textarea, TextareaModule } from 'primeng/textarea';
@@ -31,15 +31,10 @@ import { Category,CategoryService } from '@/pages/service/category.service';
 
                         <div>
                             <div *ngIf="post">
-                                <div><strong>Submission ID:</strong> {{ post.submissionId }}</div>
-                                <div><strong>Title:</strong> {{ post.title }}</div>
-                                <div><strong>Text:</strong> {{ post.text }}</div>
-                                <div><strong>Uploaded:</strong> {{ post.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+                                <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block">Uploaded on: {{ post.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+                                <div class="text-l font-bold mt-2">{{ post.title }}</div>
+                                <div class="text-l font-medium mt-2">{{ post.text }}</div>
                             </div>
-
-                            <!--                        <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">{{ post.submissionId }}</span>-->
-                            <!--                        <div class="text-lg font-medium mt-2">{{ post.title }}</div>-->
-                            <!--                        <div class="text-lg font-medium mt-2">{{ post.text }}</div>-->
                         </div>
                     </div>
                 </div>
@@ -55,6 +50,8 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                         </div>
 
                         <div *ngFor="let need of needs" class="p-4 border rounded mb-2">
+                            <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Created on: {{ need.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+
                             <textarea
                                 pTextarea
                                 [(ngModel)]="need.content"
@@ -85,37 +82,20 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                             <div class="flex flex-wrap gap-2 mt-2">
                                 <p-button *ngIf="!need.isAccepted" label="Accept" (click)="onAcceptNeed(need.id)" />
 
-                                <p-button
-                                    *ngIf="!editingNeeds[need.id]"
-                                    label="Edit"
-                                    (click)="onStartEdit(need)"
-                                ></p-button>
+                                <p-button *ngIf="!editingNeeds[need.id]" label="Edit" (click)="onStartEdit(need)"></p-button>
 
-                                <p-splitbutton
-                                  *ngIf="editingNeeds[need.id]"
-                                  label="Save"
-                                  (onClick)="onSaveEdit(need)"
-                                  [model]="trackEditMenuByNeed[need.id]"
-                                ></p-splitbutton>
+                                <p-splitbutton *ngIf="editingNeeds[need.id]" label="Save" (onClick)="onSaveEdit(need)" [model]="trackEditMenuByNeed[need.id]"></p-splitbutton>
 
                                 <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
 
-                                <button
-                                    *ngIf="need.isAccepted"
-                                    type="button"
-                                    pButton
-                                    (click)="onShowCategoryMenu(need, menu, $event)"
-                                    style="width:auto"
-                                >
-                                Categorize
-                                <i class="pi pi-chevron-down"></i>
+                                <button *ngIf="need.isAccepted" type="button" pButton (click)="onShowCategoryMenu(need, menu, $event)" style="width:auto">
+                                    Categorize
+                                    <i class="pi pi-chevron-down"></i>
                                 </button>
 
                                 <p-button label="Delete" severity="danger" (click)="onDeleteNeed(need.id)" />
-
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -138,13 +118,12 @@ export class PostDetail implements OnDestroy {
     private ogNeedText: { [needId: number]: string } = {};
     trackEditMenuByNeed: Record<number, MenuItem[]> = {};
 
-
     constructor(
         private postService: PostService,
         private needService: NeedService,
         private route: ActivatedRoute,
         private messageService: MessageService,
-        private categoryService: CategoryService,
+        private categoryService: CategoryService
     ) {}
 
     ngOnInit() {
@@ -177,9 +156,7 @@ export class PostDetail implements OnDestroy {
                 });
             }
         });
-
     }
-
 
     ngAfterViewInit() {
         setTimeout(() => this.resizeAll());
@@ -197,7 +174,9 @@ export class PostDetail implements OnDestroy {
             .getNeedsByPostId(this.post.id)
             .pipe(takeUntil(this.destroy$))
             .subscribe((needs) => {
-                this.needs = needs;
+                needs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+                this.needs = [...needs.filter((n) => !n.isAccepted), ...needs.filter((n) => n.isAccepted)];
+
                 this.editingNeeds = {};
                 setTimeout(() => this.resizeAll());
             });
@@ -255,7 +234,6 @@ export class PostDetail implements OnDestroy {
             .subscribe({
                 next: () => {
                     this.loadNeeds();
-
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Success',
@@ -281,62 +259,60 @@ export class PostDetail implements OnDestroy {
         setTimeout(() => this.resizeAll());
 
         this.trackEditMenuByNeed[need.id] = [
-          {
-            label: 'Discard changes',
-            command: () => this.onDiscardChanges(need),
-          },
+            {
+                label: 'Discard changes',
+                command: () => this.onDiscardChanges(need)
+            }
         ];
+    }
 
-      }
-
-      onSaveEdit(need: Need) {
+    onSaveEdit(need: Need) {
         this.onToggleEdit(need);
     }
 
-      onDiscardChanges(need: Need) {
+    onDiscardChanges(need: Need) {
         if (this.ogNeedText.hasOwnProperty(need.id)) {
-          need.content = this.ogNeedText[need.id];
+            need.content = this.ogNeedText[need.id];
         }
         delete this.editingNeeds[need.id];
         delete this.ogNeedText[need.id];
         delete this.trackEditMenuByNeed[need.id];
         setTimeout(() => this.resizeAll());
-      }
+    }
 
-      onToggleEdit(need: Need) {
+    onToggleEdit(need: Need) {
         // const isEditing = this.editingNeeds[need.id];
 
         // if (isEditing) {
-          this.needService.editContent(need.id, need.content)
+        this.needService
+            .editContent(need.id, need.content.trim())
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-              next: () => {
-                delete this.editingNeeds[need.id];
-                delete this.ogNeedText[need.id];
-                delete this.trackEditMenuByNeed[need.id];
-                this.messageService.add({
-                  severity: 'success',
-                  summary: 'Success',
-                  detail: 'Need updated successfully'
-                });
-                this.loadNeeds();
-              },
-              error: (err) => {
-                console.error('Error saving content:', err);
-                this.messageService.add({
-                  severity: 'error',
-                  summary: 'Error',
-                  detail: 'Failed to update need'
-                });
-              }
+                next: () => {
+                    delete this.editingNeeds[need.id];
+                    delete this.ogNeedText[need.id];
+                    delete this.trackEditMenuByNeed[need.id];
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Need updated successfully'
+                    });
+                    this.loadNeeds();
+                },
+                error: (err) => {
+                    console.error('Error saving content:', err);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to update need'
+                    });
+                }
             });
         // } else {
         //   // optional if its still used somewhere else
         //   this.onStartEdit(need);
         // }
-      }
-
-
+    }
 
     onShowCategoryMenu(need: Need, menu: any, event: MouseEvent) {
         this.selectedNeedForCat = need;

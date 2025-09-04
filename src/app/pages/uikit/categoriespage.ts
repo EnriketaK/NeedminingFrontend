@@ -41,7 +41,6 @@ import { Menu } from 'primeng/menu';
         SelectButtonModule,
         PickListModule,
         OrderListModule,
-        TagModule,
         ButtonModule,
         IconField,
         InputIcon,
@@ -54,14 +53,10 @@ import { Menu } from 'primeng/menu';
         RouterModule,
         ColorPicker,
         Menubar,
-        InputGroup,
         Checkbox,
         Fluid,
         InputGroupAddon,
-        InputNumber,
-        SplitButton,
-        Tooltip,
-        Menu
+        SplitButton
     ],
     template: ` <p-toast />
         <div class="mb-6">
@@ -89,46 +84,34 @@ import { Menu } from 'primeng/menu';
 
         <div class="flex flex-col">
             <div class="card">
-                <div class="flex items-center justify-between">
-                    <h5 class="m-0">Categories Overview</h5>
-                    <p-iconfield>
-                        <p-inputicon styleClass="pi pi-search" />
-                        <input pInputText type="text" [(ngModel)]="globalFilter" (input)="onGlobalFilter($event)" placeholder="Search..." />
-                    </p-iconfield>
-                </div>
+                <div class="font-semibold text-xl mb-8">Categories Overview</div>
+                <p-menubar [model]="nestedMenuItems">
+                    <ng-template #end>
+                        <p-iconfield>
+                            <p-inputicon class="pi pi-search" />
+                            <input pInputText type="text" [(ngModel)]="globalFilter" (input)="onGlobalFilter($event)" placeholder="Search..." />
+                        </p-iconfield>
+                    </ng-template>
+                </p-menubar>
 
-                <div class="flex flex-wrap gap-2 mt-2">
-<div
-    class="inline-flex gap-4 p-4 border rounded mb-2 items-center"
-    *ngFor="let category of filteredCategories"
->
-    <input
-        pInputText
-        type="text"
-        [(ngModel)]="category.title"
-        [readonly]="!editing[category.id]"
-        placeholder="Category Name"
-        pTooltip="Category Name"
-        style="width: 200px;"
-            [style]="{
-                'background-color': category.color,
-                color: getTextColor(category.color),
-                'font-weight': 'bold'
-            }"
-    />
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <div class="inline-flex gap-4 p-4 border rounded mb-2 items-center" *ngFor="let category of filteredCategories">
+                        <input
+                            pInputText
+                            type="text"
+                            [(ngModel)]="category.title"
+                            [readonly]="!editing[category.id]"
+                            placeholder="Category Name"
+                            pTooltip="Category Name"
+                            style="width: 200px;"
+                            [style]="{
+                                'background-color': category.color,
+                                color: getTextColor(category.color),
+                                'font-weight': 'bold'
+                            }"
+                        />
 
-    <p-splitbutton
-        (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)"
-        [label]="editing[category.id] ? 'Save' : 'Edit'"
-        [model]="editBtnMenus[category.id]"
-        style="width: 100px;"
-    ></p-splitbutton>
-</div>
-
-
-                    <div class="inline-flex gap-4 p-4 border rounded mb-2">
-                        <input pInputText type="text" placeholder="Category Name" pTooltip="Category Name" />
-                        <p-splitbutton label="Edit" [model]="items"></p-splitbutton>
+                        <p-splitbutton (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)" [label]="editing[category.id] ? 'Save' : 'Edit'" [model]="editBtnMenus[category.id]" style="width: 100px;"></p-splitbutton>
                     </div>
                 </div>
             </div>
@@ -155,6 +138,16 @@ export class CategoriesPage {
     ogTitles: { [categoryId: number]: string } = {};
     editBtnMenus: { [categoryId: number]: MenuItem[] } = {};
 
+    sortDescending: boolean = false;
+
+    nestedMenuItems = [
+        {
+            label: 'Sort by name',
+            icon: 'pi pi-fw pi-sort-alt',
+            command: () => this.toggleSortByName()
+        }
+    ];
+
     constructor(
         private messageService: MessageService,
         private categoryService: CategoryService
@@ -174,17 +167,17 @@ export class CategoriesPage {
                 this.filteredCategories = [...data];
 
                 for (const cat of data) {
-                if (!this.editing[cat.id]) {
-                    this.editBtnMenus[cat.id] = [
-                        {
-                            label: 'Delete',
-                            icon: 'pi pi-trash',
-                            command: () => this.onDeleteCategory(cat.id)
-                        }
-                    ];
+                    if (!this.editing[cat.id]) {
+                        this.editBtnMenus[cat.id] = [
+                            {
+                                label: 'Delete',
+                                icon: 'pi pi-trash',
+                                command: () => this.onDeleteCategory(cat.id)
+                            }
+                        ];
+                    }
                 }
-            }
-
+                this.sortCategories();
             },
             error: (err) => {
                 console.error('Error loading categories:', err);
@@ -203,7 +196,7 @@ export class CategoriesPage {
             return;
         }
 
-        this.categoryService.createCategory(this.categoryName, this.colorValue).subscribe({
+        this.categoryService.createCategory(this.categoryName.trim(), this.colorValue).subscribe({
             next: (newCategory) => {
                 this.messageService.add({
                     severity: 'success',
@@ -227,109 +220,111 @@ export class CategoriesPage {
         });
     }
 
+    toggleSortByName() {
+        this.sortDescending = !this.sortDescending;
+        this.sortCategories();
+    }
+
     onGlobalFilter(event: Event) {
         const query = (event.target as HTMLInputElement).value.toLowerCase();
         this.filteredCategories = this.categories.filter((category) => category.title?.toLowerCase().includes(query));
+        this.sortCategories();
     }
 
+    onStartEdit(category: Category) {
+        this.ogTitles[category.id] = category.title;
+        this.editing[category.id] = true;
 
-onStartEdit(category: Category) {
-    this.ogTitles[category.id] = category.title;
-    this.editing[category.id] = true;
+        this.editBtnMenus[category.id] = [
+            {
+                label: 'Discard changes',
+                icon: 'pi pi-times',
+                command: () => this.onDiscardChanges(category)
+            }
+        ];
+    }
 
-    this.editBtnMenus[category.id] = [
-        {
-            label: 'Discard changes',
-            icon: 'pi pi-times',
-            command: () => this.onDiscardChanges(category)
+    onSaveEdit(category: Category) {
+        if (!category.title.trim()) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Validation',
+                detail: 'Category title cannot be empty'
+            });
+            return;
         }
-    ];
-}
 
+        this.categoryService.updateCategoryTitle(category.id, category.title.trim()).subscribe({
+            next: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Updated',
+                    detail: `Category updated successfully`
+                });
 
-onSaveEdit(category: Category) {
-    if (!category.title.trim()) {
-        this.messageService.add({
-            severity: 'warn',
-            summary: 'Validation',
-            detail: 'Category title cannot be empty'
+                delete this.ogTitles[category.id];
+                delete this.editing[category.id];
+
+                this.editBtnMenus[category.id] = [
+                    {
+                        label: 'Delete',
+                        icon: 'pi pi-trash',
+                        command: () => this.onDeleteCategory(category.id)
+                    }
+                ];
+
+                this.loadCategories();
+            },
+            error: (err) => {
+                console.error('Error updating category:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to update category'
+                });
+            }
         });
-        return;
     }
 
-    this.categoryService.updateCategoryTitle(category.id, category.title.trim()).subscribe({
-        next: () => {
-            this.messageService.add({
-                severity: 'success',
-                summary: 'Updated',
-                detail: `Category updated successfully`
-            });
-
-            delete this.ogTitles[category.id];
-            delete this.editing[category.id];
-
-            this.editBtnMenus[category.id] = [
-                {
-                    label: 'Delete',
-                    icon: 'pi pi-trash',
-                    command: () => this.onDeleteCategory(category.id)
-                }
-            ];
-
-            this.loadCategories();
-        },
-        error: (err) => {
-            console.error('Error updating category:', err);
-            this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to update category'
-            });
+    onDiscardChanges(category: Category) {
+        if (this.ogTitles.hasOwnProperty(category.id)) {
+            category.title = this.ogTitles[category.id];
         }
-    });
-}
 
-onDiscardChanges(category: Category) {
-    if (this.ogTitles.hasOwnProperty(category.id)) {
-        category.title = this.ogTitles[category.id];
+        delete this.editing[category.id];
+        delete this.ogTitles[category.id];
+
+        this.editBtnMenus[category.id] = [
+            {
+                label: 'Delete',
+                icon: 'pi pi-trash',
+                command: () => this.onDeleteCategory(category.id)
+            }
+        ];
     }
 
-    delete this.editing[category.id];
-    delete this.ogTitles[category.id];
+    onDeleteCategory(id: number, event?: MouseEvent) {
+        if (event) event.stopPropagation();
 
-    this.editBtnMenus[category.id] = [
-        {
-            label: 'Delete',
-            icon: 'pi pi-trash',
-            command: () => this.onDeleteCategory(category.id)
-        }
-    ];
-}
-
-
-        onDeleteCategory(id: number, event?: MouseEvent) {
-            if (event) event.stopPropagation();
-
-            this.categoryService.deleteCategoryById(id).subscribe({
-                next: () => {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Deleted',
-                        detail: 'Category deleted successfully'
-                    });
-                    this.loadCategories();
-                },
-                error: (err) => {
-                    console.error('Error deleting category:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to delete category'
-                    });
-                }
-            });
-        }
-
+        this.categoryService.deleteCategoryById(id).subscribe({
+            next: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Deleted',
+                    detail: 'Category deleted successfully'
+                });
+                this.loadCategories();
+            },
+            error: (err) => {
+                console.error('Error deleting category:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to delete category'
+                });
+            }
+        });
+    }
 
     getTextColor(hex: string): string {
         hex = hex.replace('#', '');
@@ -339,5 +334,14 @@ onDiscardChanges(category: Category) {
         const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
 
         return luminance <= 186 ? 'white' : 'black';
+    }
+
+    private sortCategories() {
+        const direction = this.sortDescending ? -1 : 1;
+        this.filteredCategories.sort((a, b) => {
+            return direction * a.title.localeCompare(b.title);
+        });
+
+        this.filteredCategories = [...this.filteredCategories];
     }
 }

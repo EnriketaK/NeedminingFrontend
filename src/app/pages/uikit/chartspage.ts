@@ -27,12 +27,12 @@ import { FormsModule } from '@angular/forms';
             </p-tabs>
 
             <div *ngIf="activeTab === 0" class="card flex flex-col items-center">
-                <div class="font-semibold text-xl mb-4">Pie</div>
+                <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
                 <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>
             </div>
 
             <div *ngIf="activeTab === 1" class="card flex flex-col items-center">
-                <div class="font-semibold text-xl mb-4">Doughnut</div>
+                <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
                 <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
             </div>
         </div>
@@ -83,6 +83,7 @@ export class ChartsPage {
         });
     }
 
+
     updateChartOptions() {
         const documentStyle = getComputedStyle(document.documentElement);
         const textColor = documentStyle.getPropertyValue('--text-color');
@@ -93,6 +94,19 @@ export class ChartsPage {
                     labels: {
                         usePointStyle: true,
                         color: textColor
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (tooltipItem: any) => {
+                            const dataset = tooltipItem.dataset;
+                            const total = dataset.data.reduce((sum: number, val: number) => sum + val, 0);
+                            const value = dataset.data[tooltipItem.dataIndex];
+                            const percentge = ((value / total) * 100).toFixed(1);
+                            const label = this.pieData.labels[tooltipItem.dataIndex];
+
+                            return `${label}: ${value} (${percentge}%)`;
+                        }
                     }
                 }
             }

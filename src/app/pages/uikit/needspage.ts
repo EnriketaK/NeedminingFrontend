@@ -15,27 +15,58 @@ import {Table, TableModule } from 'primeng/table';
 import { Toolbar } from 'primeng/toolbar';
 import {FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import {MenuItem, MessageService } from 'primeng/api';
 import { Chip } from 'primeng/chip';
 import {Router, RouterLink,RouterModule } from '@angular/router';
+import { Timeline } from 'primeng/timeline';
+import { takeUntil } from 'rxjs';
+import { CategoryService } from '@/pages/service/category.service';
+import { Tree } from 'primeng/tree';
+import { Menubar } from 'primeng/menubar';
+import { SplitButton } from 'primeng/splitbutton';
+import { Menu } from 'primeng/menu';
 
 @Component({
     selector: 'app-needs-page',
     standalone: true,
-    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, Chip, RouterModule],
+    imports: [
+        CommonModule,
+        DataViewModule,
+        FormsModule,
+        SelectButtonModule,
+        PickListModule,
+        OrderListModule,
+        TagModule,
+        ButtonModule,
+        IconField,
+        InputIcon,
+        InputText,
+        TableModule,
+        Toolbar,
+        FileUploadModule,
+        ToastModule,
+        Chip,
+        RouterModule,
+        Timeline,
+        Menu,
+        Menubar
+    ],
     template: ` <p-toast />
-
         <div class="flex flex-col">
             <div class="card">
-                <!--            <div class="font-semibold text-xl">DataView</div>-->
+                <div class="font-semibold text-xl mb-4">Needs Overview</div>
+                <p-menubar class="mb-4" [model]="nestedMenuItems">
+                    <ng-template #end>
+                        <p-iconfield>
+                            <p-inputicon class="pi pi-search" />
+                            <input pInputText type="text" [(ngModel)]="globalFilter" (input)="onGlobalFilter($event)" placeholder="Search..." />
 
-                <div class="flex items-center justify-between">
-                    <h5 class="m-0">Needs Overview</h5>
-                    <p-iconfield>
-                        <p-inputicon styleClass="pi pi-search" />
-                        <input pInputText type="text" [(ngModel)]="globalFilter" (input)="onGlobalFilter($event)" placeholder="Search..." />
-                    </p-iconfield>
-                </div>
+                            <button type="button" pButton (click)="onShowFilterMenu($event)" style="width:auto"><i class="pi pi-filter"></i></button>
+                        </p-iconfield>
+
+                        <p-menu #filterMenu [popup]="true" [model]="filterItems"></p-menu>
+                    </ng-template>
+                </p-menubar>
 
                 <p-dataview
                     #dataView
@@ -54,43 +85,36 @@ import {Router, RouterLink,RouterModule } from '@angular/router';
                         <div class="grid grid-cols-12 gap-4">
                             <div *ngFor="let item of items; let i = index" class="col-span-12 sm:col-span-6 lg:col-span-4 p-2">
                                 <div class="p-6 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded flex flex-col">
-                                    <div class="pt-12">
-                                        <div class="flex flex-row justify-between items-start gap-2">
-                                            <div>
-                                                <!--                                                <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">Go to post: {{ item.post.title }}</span>-->
-
-<!--                                                <a routerLink='/uikit/postdetail' class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
-<!--                                                <a [routerLink]="['/uikit/postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
-                                                <a [routerLink]="['/uikit', 'postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>
-<!--                                                <a [routerLink]="['/postdetail', item.post.id]" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
-<!--                                                <a (click)="router.navigate(['/postdetail', item.post.id])" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
-<!--                                                <a (click)="router.navigate(['/postdetail'])" class="font-medium text-surface-500 dark:text-surface-400 text-sm block cursor-pointer">Go to post: {{ item.post.title }}</a>-->
-
-                                                <div class="text-lg font-medium mt-1">
-                                                    {{ item.content }}
-                                                </div>
-                                            </div>
-
-                                            <div class="bg-surface-100 p-1" style="border-radius: 30px">
-                                                <div
-                                                    class="bg-surface-0 flex items-center gap-2 justify-center py-1 px-2"
-                                                    style="
-                                                                    border-radius: 30px;
-                                                                    box-shadow:
-                                                                        0px 1px 2px 0px rgba(0, 0, 0, 0.04),
-                                                                        0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-                                                                "
-                                                >
-                                                    <span class="text-surface-900 font-medium text-xs">{{ item.rating }}</span>
-                                                    <i class="pi pi-star-fill text-yellow-500"></i>
-                                                </div>
+                                    <div class="flex flex-row justify-between items-start gap-2 mb-4">
+                                        <div>
+                                            <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Last modified: {{ item.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+                                            <div class="text-l font-medium mt-2 mb-2">Post: {{ item.post.title }}</div>
+                                            <div class="text-lg font-bold mt-1">
+                                                {{ item.content }}
                                             </div>
                                         </div>
-                                        <div class="flex flex-col gap-6 mt-6">
-                                            <div class="flex flex-wrap gap-2">
-                                                <p-tag *ngFor="let category of item.categories" [value]="category.title" [style]="{ 'background-color': category.color, color: getTextColor(category.color) }" />
-                                            </div>
-                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-2 mt-2 mb-2">
+                                        <p-tag
+                                            *ngFor="let category of item.categories"
+                                            [style]="{
+                                                'background-color': category.color,
+                                                color: getTextColor(category.color)
+                                            }"
+                                            rounded
+                                            class="text-surface-900 font-medium text-sm"
+                                        >
+                                            {{ category.title }}
+                                            <i class="pi pi-times cursor-pointer" (click)="onRemoveCategory(item, category.id, $event)" title="Remove category"></i>
+                                        </p-tag>
+                                    </div>
+
+                                    <div class="p-1">
+                                        <p-button [routerLink]="['/uikit', 'postdetail', item.post.id]" styleClass="flex-auto md:flex-initial whitespace-nowrap">
+                                            Go to post
+                                            <i class="pi pi-arrow-right"></i>
+                                        </p-button>
                                     </div>
                                 </div>
                             </div>
@@ -110,48 +134,131 @@ import {Router, RouterLink,RouterModule } from '@angular/router';
 })
 export class NeedsPage {
     layout: 'list' | 'grid' = 'grid';
-
     needs: Need[] = [];
     filteredNeeds: Need[] = [];
-
-    uploadedFiles: any[] = [];
-
     globalFilter: string = '';
-
     firstPage = 0;
+    sortDescending: boolean = true;
 
-    // postId!: number;
+    nestedMenuItems = [
+        {
+            label: 'Sort by date',
+            icon: 'pi pi-fw pi-sort-alt',
+            command: () => this.toggleSortByDate()
+        }
+    ];
+
+    filterOptions: 'content' | 'category' = 'content';
+    @ViewChild('filterMenu') filterMenu: any;
+    filterItems: MenuItem[] = [
+        {
+            label: 'Need Content',
+            icon: 'pi pi-align-left',
+            command: () => {
+                this.filterOptions = 'content';
+                this.onFilterByOption();
+            }
+        },
+        {
+            label: 'Category',
+            icon: 'pi pi-tags',
+            command: () => {
+                this.filterOptions = 'category';
+                this.onFilterByOption();
+            }
+        }
+    ];
 
     constructor(
         private needService: NeedService,
-        protected router: Router
+        protected router: Router,
+        private messageService: MessageService
     ) {}
 
     ngOnInit() {
         this.loadNeeds();
-        // this.postId = Number(this.route.snapshot.paramMap.get('id'));
     }
 
     loadNeeds() {
         this.needService.getAllNeeds().subscribe((data) => {
-            this.needs = data;
-            this.filteredNeeds = [...data];
-            console.log('this.needs');
-            console.log(this.needs);
+            this.needs = [...data].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+            this.filteredNeeds = [...this.needs];
 
             this.firstPage = 0;
         });
     }
 
+    onShowFilterMenu(event: MouseEvent) {
+        this.filterMenu.toggle(event);
+    }
+
+    onFilterByOption() {
+        const fakeEvent = {
+            target: { value: this.globalFilter }
+        } as unknown as Event;
+
+        this.onGlobalFilter(fakeEvent);
+    }
+
     onGlobalFilter(event: Event) {
         const query = (event.target as HTMLInputElement).value.toLowerCase();
-        this.filteredNeeds = this.needs.filter((need) => need.content?.toLowerCase().includes(query));
 
-        this.firstPage = 0;
+        if (!query.trim().toLowerCase()) {
+            this.filteredNeeds = [...this.needs];
+            this.sortPosts();
+            return;
+        }
+        if (this.filterOptions === 'content') {
+            this.filteredNeeds = this.needs.filter((need) => need.content?.toLowerCase().includes(query));
+        } else if (this.filterOptions === 'category') {
+            this.filteredNeeds = this.needs.filter((need) => need.categories.some((cat) => cat.title.toLowerCase().includes(query)));
+        }
+
+        this.sortPosts();
     }
 
     onPage(event: DataViewPageEvent) {
         this.firstPage = event.first;
+    }
+
+    onRemoveCategory(need: Need, categoryId: number, event?: MouseEvent) {
+        event?.stopPropagation();
+
+        const prevCategories = [...need.categories];
+        need.categories = need.categories.filter((c) => c.id !== categoryId);
+
+        this.needService.removeCategoryFromNeed(need.id, categoryId).subscribe({
+            next: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Category removed',
+                    detail: 'The category was removed from the need.'
+                });
+            },
+            error: (err) => {
+                console.error('Error removing category:', err);
+                need.categories = prevCategories;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to remove category'
+                });
+            }
+        });
+    }
+
+    toggleSortByDate() {
+        this.sortDescending = !this.sortDescending;
+        this.sortPosts();
+    }
+
+    private sortPosts() {
+        const direction = this.sortDescending ? -1 : 1;
+
+        this.filteredNeeds.sort((a, b) => direction * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()));
+        this.filteredNeeds = [...this.filteredNeeds];
+
+        this.firstPage = 0;
     }
 
     getTextColor(hex: string): string {
