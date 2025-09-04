@@ -29,7 +29,7 @@ export class AppMenu {
                 items: [
                     { label: 'Posts', icon: 'pi pi-fw pi-list', routerLink: ['/uikit/posts'] },
                     { label: 'Needs', icon: 'pi pi-fw pi-table', routerLink: ['/uikit/needs'] },
-                    { label: 'Categories', icon: 'pi pi-fw pi-clone', routerLink: ['/uikit/categories'] },
+                    { label: 'Categories', icon: 'pi pi-fw pi-tags', routerLink: ['/uikit/categories'] },
                     { label: 'Charts', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/uikit/charts'] },
                     { label: 'Upload', icon: 'pi pi-fw pi-file', routerLink: ['/uikit/upload'] },
                     { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', routerLink: ['/uikit/formlayout'] },
