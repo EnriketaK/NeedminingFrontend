@@ -46,10 +46,10 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                         <div *ngIf="needs.length === 0">No needs available for this post.</div>
 
                         <div class="flex gap-2">
-                            <p-button label="AI Needmine" icon="pi pi-bolt" (click)="onExtractNeeds()" />
+                            <p-button severity="contrast" label="AI Needmine" icon="pi pi-bolt" (click)="onExtractNeeds()" />
                         </div>
 
-                        <div *ngFor="let need of needs" class="p-4 border rounded mb-2">
+                        <div *ngFor="let need of needs" class="p-4 mb-2 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded">
                             <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Created on: {{ need.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
 
                             <textarea
@@ -82,11 +82,9 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                             <div class="flex flex-wrap gap-2 mt-2">
                                 <p-button *ngIf="!need.isAccepted" label="Accept" (click)="onAcceptNeed(need.id)" />
 
-                                <p-button *ngIf="!editingNeeds[need.id]" label="Edit" (click)="onStartEdit(need)"></p-button>
+                                <p-button *ngIf="!editingNeeds[need.id]" label="Edit" (click)="onStartEdit(need)"/>
 
                                 <p-splitbutton *ngIf="editingNeeds[need.id]" label="Save" (onClick)="onSaveEdit(need)" [model]="trackEditMenuByNeed[need.id]"></p-splitbutton>
-
-                                <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
 
                                 <button *ngIf="need.isAccepted" type="button" pButton (click)="onShowCategoryMenu(need, menu, $event)" style="width:auto">
                                     Categorize
@@ -94,6 +92,9 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                                 </button>
 
                                 <p-button label="Delete" severity="danger" (click)="onDeleteNeed(need.id)" />
+
+                                <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
+
                             </div>
                         </div>
                     </div>
