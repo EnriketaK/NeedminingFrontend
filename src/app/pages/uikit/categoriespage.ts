@@ -30,6 +30,7 @@ import { InputNumber } from 'primeng/inputnumber';
 import { SplitButton } from 'primeng/splitbutton';
 import { Tooltip } from 'primeng/tooltip';
 import { Menu } from 'primeng/menu';
+import { Rating } from 'primeng/rating';
 
 @Component({
     selector: 'app-categories-page',
@@ -56,7 +57,8 @@ import { Menu } from 'primeng/menu';
         Checkbox,
         Fluid,
         InputGroupAddon,
-        SplitButton
+        SplitButton,
+        Rating
     ],
     template: ` <p-toast />
         <div class="mb-6">
@@ -72,11 +74,12 @@ import { Menu } from 'primeng/menu';
                             </div>
 
                             <label for="colorPicker" class="flex items-center col-span-12 mb-2 md:col-span-2 md:mb-0">Tag Color</label>
-                            <div class="col-span-12 md:col-span-10">
+                            <div class="col-span-12 md:col-span-10 flex items-center">
                                 <p-colorpicker id="colorPicker" [style]="{ width: '2rem' }" [(ngModel)]="colorValue" />
                             </div>
                             <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -94,8 +97,8 @@ import { Menu } from 'primeng/menu';
                     </ng-template>
                 </p-menubar>
 
-                <div class="flex flex-wrap gap-2 mt-4">
-                    <div class="inline-flex gap-4 p-4 border rounded mb-2 items-center" *ngFor="let category of filteredCategories">
+                <div class="flex flex-wrap gap-4 mt-4">
+                    <div class="inline-flex gap-4 p-4 rounded mb-2 items-center border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded" *ngFor="let category of filteredCategories">
                         <input
                             pInputText
                             type="text"
@@ -106,8 +109,7 @@ import { Menu } from 'primeng/menu';
                             style="width: 200px;"
                             [style]="{
                                 'background-color': category.color,
-                                color: getTextColor(category.color),
-                                'font-weight': 'bold'
+                                color: getTextColor(category.color)
                             }"
                         />
 

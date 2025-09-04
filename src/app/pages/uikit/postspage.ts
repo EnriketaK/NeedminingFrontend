@@ -75,7 +75,7 @@ import { Menubar } from 'primeng/menubar';
                                             </div>
 
                                             <div class="p-1">
-                                                <p-button [routerLink]="['/uikit', 'postdetail', item.id]" styleClass="flex-auto md:flex-initial whitespace-nowrap">
+                                                <p-button severity="secondary" [routerLink]="['/uikit', 'postdetail', item.id]" styleClass="flex-auto md:flex-initial whitespace-nowrap">
                                                     Go to post
                                                     <i class="pi pi-arrow-right"></i>
                                                 </p-button>
