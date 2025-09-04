@@ -234,7 +234,6 @@ export class PostDetail implements OnDestroy {
             .subscribe({
                 next: () => {
                     this.loadNeeds();
-
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Success',
@@ -286,7 +285,7 @@ export class PostDetail implements OnDestroy {
 
         // if (isEditing) {
         this.needService
-            .editContent(need.id, need.content)
+            .editContent(need.id, need.content.trim())
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: () => {

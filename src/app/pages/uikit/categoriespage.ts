@@ -196,7 +196,7 @@ export class CategoriesPage {
             return;
         }
 
-        this.categoryService.createCategory(this.categoryName, this.colorValue).subscribe({
+        this.categoryService.createCategory(this.categoryName.trim(), this.colorValue).subscribe({
             next: (newCategory) => {
                 this.messageService.add({
                     severity: 'success',
