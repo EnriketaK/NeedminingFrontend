@@ -23,10 +23,10 @@ export class AppMenu {
             {
                 label: 'Menu',
                 items: [
-                    { label: 'Posts', icon: 'pi pi-fw pi-list', routerLink: ['/uikit/posts'] },
-                    { label: 'Needs', icon: 'pi pi-fw pi-table', routerLink: ['/uikit/needs'] },
-                    { label: 'Categories', icon: 'pi pi-fw pi-tags', routerLink: ['/uikit/categories'] },
-                    { label: 'Charts', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/uikit/charts'] }
+                    { label: 'Posts', icon: 'pi pi-fw pi-list', routerLink: ['/aineedminer/posts'] },
+                    { label: 'Needs', icon: 'pi pi-fw pi-table', routerLink: ['/aineedminer/needs'] },
+                    { label: 'Categories', icon: 'pi pi-fw pi-tags', routerLink: ['/aineedminer/categories'] },
+                    { label: 'Charts', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/aineedminer/charts'] }
                 ]
             }
         ];
