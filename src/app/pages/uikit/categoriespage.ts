@@ -113,7 +113,7 @@ import { Rating } from 'primeng/rating';
                             }"
                         />
 
-                        <p-splitbutton (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)" [label]="editing[category.id] ? 'Save' : 'Edit'" [model]="editBtnMenus[category.id]" style="width: 100px;"></p-splitbutton>
+                        <p-splitbutton severity="secondary" (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)" [label]="editing[category.id] ? 'Save' : 'Edit'" [model]="editBtnMenus[category.id]" style="width: 100px;"></p-splitbutton>
                     </div>
                 </div>
             </div>
@@ -185,7 +185,7 @@ export class CategoriesPage {
                 console.error('Error loading categories:', err);
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error',
+                    summary: 'Load Failed',
                     detail: 'Failed to load categories'
                 });
             }

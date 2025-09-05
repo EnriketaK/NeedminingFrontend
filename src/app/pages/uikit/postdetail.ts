@@ -6,7 +6,6 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import {Textarea, TextareaModule } from 'primeng/textarea';
 import {ActivatedRoute, RouterModule } from '@angular/router';
-import { Subject,switchMap,takeUntil } from 'rxjs';
 import {Need, NeedService } from '@/pages/service/need.service';
 import { Post,PostService } from '@/pages/service/post.service';
 import { Tag,TagModule } from 'primeng/tag';
@@ -16,13 +15,13 @@ import {MenuItem, MessageService } from 'primeng/api';
 import { SplitButton } from 'primeng/splitbutton';
 import { Toast } from 'primeng/toast';
 import { Category,CategoryService } from '@/pages/service/category.service';
+import { Tooltip } from 'primeng/tooltip';
 
 @Component({
     selector: 'app-post-detail',
     standalone: true,
     imports: [InputTextModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, RouterModule, Tag, DatePipe, CommonModule, TagModule, Menu, SplitButton, Toast],
-    template: `
-  <p-toast />
+    template: ` <p-toast />
         <p-fluid>
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="md:w-1/2">
@@ -46,10 +45,20 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                         <div *ngIf="needs.length === 0">No needs available for this post.</div>
 
                         <div class="flex gap-2">
-                            <p-button severity="contrast" label="AI Needmine" icon="pi pi-bolt" (click)="onExtractNeeds()" />
+                            <p-button severity="contrast" label="AI Needmine" icon="pi pi-bolt" (click)="onExtractNeeds()" title="Analyze post with LLM" />
                         </div>
 
-                        <div *ngFor="let need of needs" class="p-4 mb-2 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded">
+                        <div
+                            *ngFor="let need of needs"
+                            class="p-4 mb-2 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded"
+                            [ngStyle]="
+                                !need.isAccepted
+                                    ? {
+                                          'box-shadow': '1px 2px 2px 2px rgba(0, 0, 0, 0.04), 1px 2px 2px 2px rgba(0, 0, 0, 0.06)'
+                                      }
+                                    : {}
+                            "
+                        >
                             <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Created on: {{ need.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
 
                             <textarea
@@ -82,7 +91,7 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                             <div class="flex flex-wrap gap-2 mt-2">
                                 <p-button *ngIf="!need.isAccepted" label="Accept" (click)="onAcceptNeed(need.id)" />
 
-                                <p-button *ngIf="!editingNeeds[need.id]" label="Edit" (click)="onStartEdit(need)"/>
+                                <p-button *ngIf="!editingNeeds[need.id]" label="Edit" (click)="onStartEdit(need)" />
 
                                 <p-splitbutton *ngIf="editingNeeds[need.id]" label="Save" (onClick)="onSaveEdit(need)" [model]="trackEditMenuByNeed[need.id]"></p-splitbutton>
 
@@ -94,7 +103,6 @@ import { Category,CategoryService } from '@/pages/service/category.service';
                                 <p-button label="Delete" severity="danger" (click)="onDeleteNeed(need.id)" />
 
                                 <p-menu #menu [popup]="true" [model]="allCategories"></p-menu>
-
                             </div>
                         </div>
                     </div>
@@ -103,15 +111,13 @@ import { Category,CategoryService } from '@/pages/service/category.service';
         </p-fluid>`,
     providers: [MessageService]
 })
-export class PostDetail implements OnDestroy {
+export class PostDetail {
     post!: Post;
     needs: Need[] = [];
     editingNeeds: { [needId: number]: boolean } = {};
 
     allCategories: { label: string; command: () => void }[] = [];
     selectedNeedForCat!: Need;
-
-    private destroy$ = new Subject<void>();
 
     @ViewChildren('needTextarea', { read: ElementRef })
     textareas!: QueryList<ElementRef<HTMLTextAreaElement>>;
@@ -128,18 +134,21 @@ export class PostDetail implements OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.route.paramMap
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((params) => {
-                    const id = Number(params.get('id'));
-                    return this.postService.getPostById(id);
-                })
-            )
-            .subscribe((post) => {
+        const id = Number(this.route.snapshot.paramMap.get('id'));
+        this.postService.getPostById(id).subscribe({
+            next: (post) => {
                 this.post = post;
                 this.loadNeeds();
-            });
+            },
+            error: (err) => {
+                console.error('Error loading post:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to load post'
+                });
+            }
+        });
 
         this.categoryService.getAllCategories().subscribe({
             next: (categories) => {
@@ -164,92 +173,84 @@ export class PostDetail implements OnDestroy {
         this.textareas.changes.subscribe(() => this.resizeAll());
     }
 
-    ngOnDestroy() {
-        this.destroy$.next();
-        this.destroy$.complete();
-    }
-
     loadNeeds() {
         if (!this.post?.id) return;
-        this.needService
-            .getNeedsByPostId(this.post.id)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((needs) => {
+        this.needService.getNeedsByPostId(this.post.id).subscribe({
+            next: (needs) => {
                 needs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
                 this.needs = [...needs.filter((n) => !n.isAccepted), ...needs.filter((n) => n.isAccepted)];
-
                 this.editingNeeds = {};
                 setTimeout(() => this.resizeAll());
-            });
+            },
+            error: (err) => {
+                console.error('Error loading needs:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to load needs for the post'
+                });
+            }
+        });
     }
 
     onExtractNeeds() {
         if (!this.post?.id) return;
 
-        this.needService
-            .extractNeedOfPost(this.post.id)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.loadNeeds();
-                },
-                error: (err) => {
-                    console.error('Error extracting the need:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to extract need. Please try again'
-                    });
-                }
-            });
+        this.needService.extractNeedOfPost(this.post.id).subscribe({
+            next: () => {
+                this.loadNeeds();
+            },
+            error: (err) => {
+                console.error('Error extracting the need:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to extract need. Please try again'
+                });
+            }
+        });
     }
 
     onAcceptNeed(needId: number) {
-        this.needService
-            .updateIsAccepted(needId, true)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.loadNeeds();
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Need is accepted successfully'
-                    });
-                },
-                error: (err) => {
-                    console.error('Error accepting need:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to accept need'
-                    });
-                }
-            });
+        this.needService.updateIsAccepted(needId, true).subscribe({
+            next: () => {
+                this.loadNeeds();
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Need is accepted successfully'
+                });
+            },
+            error: (err) => {
+                console.error('Error accepting need:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to accept need'
+                });
+            }
+        });
     }
 
     onDeleteNeed(needId: number) {
-        this.needService
-            .deleteNeedById(needId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.loadNeeds();
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Need is deleted successfully'
-                    });
-                },
-                error: (err) => {
-                    console.error('Error deleting need:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to delete need'
-                    });
-                }
-            });
+        this.needService.deleteNeedById(needId).subscribe({
+            next: () => {
+                this.loadNeeds();
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Need is deleted successfully'
+                });
+            },
+            error: (err) => {
+                console.error('Error deleting need:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to delete need'
+                });
+            }
+        });
     }
 
     onStartEdit(need: Need) {
@@ -285,30 +286,27 @@ export class PostDetail implements OnDestroy {
         // const isEditing = this.editingNeeds[need.id];
 
         // if (isEditing) {
-        this.needService
-            .editContent(need.id, need.content.trim())
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    delete this.editingNeeds[need.id];
-                    delete this.ogNeedText[need.id];
-                    delete this.trackEditMenuByNeed[need.id];
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Need updated successfully'
-                    });
-                    this.loadNeeds();
-                },
-                error: (err) => {
-                    console.error('Error saving content:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to update need'
-                    });
-                }
-            });
+        this.needService.editContent(need.id, need.content.trim()).subscribe({
+            next: () => {
+                delete this.editingNeeds[need.id];
+                delete this.ogNeedText[need.id];
+                delete this.trackEditMenuByNeed[need.id];
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Need updated successfully'
+                });
+                this.loadNeeds();
+            },
+            error: (err) => {
+                console.error('Error saving content:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to update need'
+                });
+            }
+        });
         // } else {
         //   // optional if its still used somewhere else
         //   this.onStartEdit(need);
@@ -321,27 +319,24 @@ export class PostDetail implements OnDestroy {
     }
 
     assignCategory(need: Need, categoryId: number) {
-        this.needService
-            .assignCategoryToNeed(need.id, categoryId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.loadNeeds();
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Category added',
-                        detail: 'The category was successfully added to the need.'
-                    });
-                },
-                error: (err) => {
-                    console.error('Error adding category:', err);
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to add category'
-                    });
-                }
-            });
+        this.needService.assignCategoryToNeed(need.id, categoryId).subscribe({
+            next: () => {
+                this.loadNeeds();
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Category added',
+                    detail: 'The category was successfully added to the need.'
+                });
+            },
+            error: (err) => {
+                console.error('Error adding category:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to add category'
+                });
+            }
+        });
     }
 
     onRemoveCategory(need: Need, categoryId: number, event?: MouseEvent) {
@@ -350,27 +345,24 @@ export class PostDetail implements OnDestroy {
         const prevCategories = [...need.categories];
         need.categories = need.categories.filter((c) => c.id !== categoryId);
 
-        this.needService
-            .removeCategoryFromNeed(need.id, categoryId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: () => {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Category removed',
-                        detail: 'The category was removed from the need.'
-                    });
-                },
-                error: (err) => {
-                    console.error('Error removing category:', err);
-                    need.categories = prevCategories;
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to remove category'
-                    });
-                }
-            });
+        this.needService.removeCategoryFromNeed(need.id, categoryId).subscribe({
+            next: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Category removed',
+                    detail: 'The category was removed from the need.'
+                });
+            },
+            error: (err) => {
+                console.error('Error removing category:', err);
+                need.categories = prevCategories;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to remove category'
+                });
+            }
+        });
     }
 
     getTextColor(hex: string): string {

@@ -180,11 +180,20 @@ export class NeedsPage {
     }
 
     loadNeeds() {
-        this.needService.getAllNeeds().subscribe((data) => {
-            this.needs = [...data].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-            this.filteredNeeds = [...this.needs];
-
-            this.firstPage = 0;
+        this.needService.getAllNeeds().subscribe({
+            next: (data) => {
+                this.needs = [...data].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+                this.filteredNeeds = [...this.needs];
+                this.firstPage = 0;
+            },
+            error: (err) => {
+                console.error('Error loading needs:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Load Failed',
+                    detail: 'Failed to load needs'
+                });
+            }
         });
     }
 

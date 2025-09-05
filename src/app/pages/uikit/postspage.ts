@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component,ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { DataViewModule,DataViewPageEvent } from 'primeng/dataview';
+import {DataView, DataViewModule,DataViewPageEvent } from 'primeng/dataview';
 import { OrderListModule } from 'primeng/orderlist';
 import { PickListModule } from 'primeng/picklist';
 import { SelectButtonModule } from 'primeng/selectbutton';
@@ -22,7 +22,7 @@ import { Menubar } from 'primeng/menubar';
 @Component({
     selector: 'app-posts-page',
     standalone: true,
-    imports: [CommonModule, DataViewModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, RouterModule, Menubar],
+    imports: [CommonModule, FormsModule, SelectButtonModule, PickListModule, OrderListModule, TagModule, ButtonModule, IconField, InputIcon, InputText, TableModule, Toolbar, FileUploadModule, ToastModule, RouterModule, Menubar, DataView],
     template: ` <p-toast />
         <div class="mb-6">
             <div class="col-span-full lg:col-span-12">
@@ -71,7 +71,7 @@ import { Menubar } from 'primeng/menubar';
                                             <div>
                                                 <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block">Uploaded on: {{ item.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
                                                 <div class="text-l font-bold mt-2">{{ item.title }}</div>
-                                                <div class="text-l font-medium mt-2">{{ item.text }}</div>
+                                                <div class="text-l font-medium mt-2 mb-2">{{ item.text }}</div>
                                             </div>
 
                                             <div class="p-1">
@@ -130,12 +130,22 @@ export class PostsPage {
     }
 
     loadPosts() {
-        this.postService.getAllPosts().subscribe((data) => {
-            this.posts = [...data].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
-            this.filteredPosts = [...this.posts];
-            this.sortDescending = true;
+        this.postService.getAllPosts().subscribe({
+            next: (data) => {
+                this.posts = [...data].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+                this.filteredPosts = [...this.posts];
+                this.sortDescending = true;
 
-            this.firstPage = 0;
+                this.firstPage = 0;
+            },
+            error: (err) => {
+                console.error('Error loading posts:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Load Failed',
+                    detail: 'Failed to load posts'
+                });
+            }
         });
     }
 
@@ -173,13 +183,13 @@ export class PostsPage {
                 this.messageService.add({ severity: 'success', summary: 'Success', detail: `Uploaded ${posts.length} post(s)` });
                 this.globalFilter = '';
                 this.loadPosts();
-            }
+            },
+
             //fix BE for error throwing when no posts were uploaded or smth, coz no errors are thrown
-            // ,
-            // error: (err) => {
-            //     this.messageService.add({ severity: 'error', summary: 'Upload failed', detail: 'Files could not be uploaded' });
-            //     console.error('Upload error:', err);
-            // }
+            error: (err) => {
+                this.messageService.add({ severity: 'error', summary: 'Upload failed', detail: 'Files could not be uploaded' });
+                console.error('Upload error:', err);
+            }
         });
     }
 }
