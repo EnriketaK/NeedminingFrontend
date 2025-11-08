@@ -52,13 +52,11 @@ export class UploadPage {
                 this.uploadedFiles = [];
                 uploader.clear();
                 this.messageService.add({ severity: 'success', summary: 'Success', detail: `Uploaded ${posts.length} post(s)` });
+            },
+            error: (err) => {
+                this.messageService.add({ severity: 'error', summary: 'Upload failed', detail: 'Files could not be uploaded' });
+                console.error('Upload error:', err);
             }
-            //fix BE for error throwing when no posts were uploaded or smth, coz no errors are thrown
-            // ,
-            // error: (err) => {
-            //     this.messageService.add({ severity: 'error', summary: 'Upload failed', detail: 'Files could not be uploaded' });
-            //     console.error('Upload error:', err);
-            // }
         });
     }
 }

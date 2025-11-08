@@ -6,8 +6,6 @@ import { DataViewModule,DataViewPageEvent } from 'primeng/dataview';
 import { OrderListModule } from 'primeng/orderlist';
 import { PickListModule } from 'primeng/picklist';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { TagModule } from 'primeng/tag';
-import {Need, NeedService } from '@/pages/service/need.service';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
@@ -57,8 +55,7 @@ import { Rating } from 'primeng/rating';
         Checkbox,
         Fluid,
         InputGroupAddon,
-        SplitButton,
-        Rating
+        SplitButton
     ],
     template: ` <p-toast />
         <div class="mb-6">
@@ -79,7 +76,6 @@ import { Rating } from 'primeng/rating';
                             </div>
                             <p-button label="Submit" (onClick)="submitCategory()" [fluid]="false"></p-button>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -98,23 +94,35 @@ import { Rating } from 'primeng/rating';
                 </p-menubar>
 
                 <div class="flex flex-wrap gap-4 mt-4">
-                    <div class="inline-flex gap-4 p-4 rounded mb-2 items-center border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded" *ngFor="let category of filteredCategories">
-                        <input
-                            pInputText
-                            type="text"
-                            [(ngModel)]="category.title"
-                            [readonly]="!editing[category.id]"
-                            placeholder="Category Name"
-                            pTooltip="Category Name"
-                            style="width: 200px;"
-                            [style]="{
-                                'background-color': category.color,
-                                color: getTextColor(category.color)
-                            }"
-                        />
+                    <ng-container *ngIf="filteredCategories.length > 0; else noCategories">
+                        <div class="inline-flex gap-4 p-4 rounded mb-2 items-center border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded" *ngFor="let category of filteredCategories">
+                            <input
+                                pInputText
+                                type="text"
+                                [(ngModel)]="category.title"
+                                [readonly]="!editing[category.id]"
+                                placeholder="Category Name"
+                                pTooltip="Category Name"
+                                style="width: 200px;"
+                                [style]="{
+                                    'background-color': category.color,
+                                    color: getTextColor(category.color)
+                                }"
+                            />
 
-                        <p-splitbutton severity="secondary" (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)" [label]="editing[category.id] ? 'Save' : 'Edit'" [model]="editBtnMenus[category.id]" style="width: 100px;"></p-splitbutton>
-                    </div>
+                            <p-splitbutton
+                                severity="secondary"
+                                (onClick)="editing[category.id] ? onSaveEdit(category) : onStartEdit(category)"
+                                [label]="editing[category.id] ? 'Save' : 'Edit'"
+                                [model]="editBtnMenus[category.id]"
+                                style="width: 100px;"
+                            ></p-splitbutton>
+                        </div>
+                    </ng-container>
+
+                    <ng-template #noCategories>
+                        <div class="text-center w-full text-gray-500 mt-4">No results found</div>
+                    </ng-template>
                 </div>
             </div>
         </div>`,

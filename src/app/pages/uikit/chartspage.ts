@@ -10,7 +10,6 @@ import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Menubar } from 'primeng/menubar';
-import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -27,14 +26,25 @@ import { MessageService } from 'primeng/api';
         </p-tabs>
 
         <div *ngIf="activeTab === 0" class="card flex flex-col items-center">
-            <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
-            <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>
+            <div class="font-semibold text-xl mb-4">Category Breakdown</div>
+<!--            <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>-->
+            <ng-container *ngIf="hasData(); else noDataTemplate">
+                <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>
+            </ng-container>
         </div>
 
         <div *ngIf="activeTab === 1" class="card flex flex-col items-center">
-            <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
-            <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
+            <div class="font-semibold text-xl mb-4">Category Breakdown</div>
+<!--            <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>-->
+            <ng-container *ngIf="hasData(); else noDataTemplate">
+                <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
+            </ng-container>
         </div>
+
+
+        <ng-template #noDataTemplate>
+            <div class="text-gray-500 mt-6">No data available to display.</div>
+        </ng-template>
     </div>`,
     providers: [MessageService]
 })
@@ -118,13 +128,18 @@ export class ChartsPage {
         };
     }
 
-    ngOnDestroy() {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
-    }
-
     onTabChange(index: string | number) {
         this.activeTab = index;
     }
+
+
+    hasData(): boolean {
+        return this.pieData &&
+               this.pieData.datasets &&
+               this.pieData.datasets.length > 0 &&
+               this.pieData.datasets[0].data &&
+               this.pieData.datasets[0].data.length > 0 &&
+               this.pieData.datasets[0].data.some((val: number) => val > 0);
+    }
+
 }

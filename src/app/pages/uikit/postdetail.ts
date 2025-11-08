@@ -15,12 +15,11 @@ import {MenuItem, MessageService } from 'primeng/api';
 import { SplitButton } from 'primeng/splitbutton';
 import { Toast } from 'primeng/toast';
 import { Category,CategoryService } from '@/pages/service/category.service';
-import { Tooltip } from 'primeng/tooltip';
 
 @Component({
     selector: 'app-post-detail',
     standalone: true,
-    imports: [InputTextModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, RouterModule, Tag, DatePipe, CommonModule, TagModule, Menu, SplitButton, Toast],
+    imports: [InputTextModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, RouterModule, Tag, DatePipe, CommonModule, TagModule, Menu, Toast, SplitButton],
     template: ` <p-toast />
         <p-fluid>
             <div class="flex flex-col md:flex-row gap-8">
@@ -314,6 +313,15 @@ export class PostDetail {
     }
 
     onShowCategoryMenu(need: Need, menu: any, event: MouseEvent) {
+        if (!this.allCategories.length) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'No Categories',
+                detail: 'There are no available categories to assign.'
+            });
+            return;
+        }
+
         this.selectedNeedForCat = need;
         menu.toggle(event);
     }
