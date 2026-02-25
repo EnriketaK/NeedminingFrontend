@@ -10,33 +10,43 @@ import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Menubar } from 'primeng/menubar';
-import { FormsModule } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 
 @Component({
     selector: 'app-charts-page',
     standalone: true,
-    imports: [CommonModule, ChartModule, FluidModule, Tab, IconField, InputIcon, InputText, Menubar, Tabs, TabList, FormsModule],
-    template: `
-        <div class="card">
-            <div class="font-semibold text-xl mb-4">Charts</div>
-            <p-tabs [value]="activeTab" (valueChange)="onTabChange($event)">
-                <p-tablist>
-                    <p-tab [value]="0">Pie</p-tab>
-                    <p-tab [value]="1">Doughnut</p-tab>
-                </p-tablist>
-            </p-tabs>
+    imports: [CommonModule, ChartModule, FluidModule, Tab, IconField, InputIcon, InputText, Menubar, Tabs, TabList],
+    template: ` <div class="card">
+        <div class="font-semibold text-xl mb-4">Charts</div>
+        <p-tabs [value]="activeTab" (valueChange)="onTabChange($event)">
+            <p-tablist>
+                <p-tab [value]="0">Pie</p-tab>
+                <p-tab [value]="1">Doughnut</p-tab>
+            </p-tablist>
+        </p-tabs>
 
-            <div *ngIf="activeTab === 0" class="card flex flex-col items-center">
-                <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
+        <div *ngIf="activeTab === 0" class="card flex flex-col items-center">
+            <div class="font-semibold text-xl mb-4">Category Breakdown</div>
+<!--            <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>-->
+            <ng-container *ngIf="hasData(); else noDataTemplate">
                 <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>
-            </div>
-
-            <div *ngIf="activeTab === 1" class="card flex flex-col items-center">
-                <div class="font-semibold text-xl mb-4">Distribution of Categories</div>
-                <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
-            </div>
+            </ng-container>
         </div>
-    `
+
+        <div *ngIf="activeTab === 1" class="card flex flex-col items-center">
+            <div class="font-semibold text-xl mb-4">Category Breakdown</div>
+<!--            <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>-->
+            <ng-container *ngIf="hasData(); else noDataTemplate">
+                <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
+            </ng-container>
+        </div>
+
+
+        <ng-template #noDataTemplate>
+            <div class="text-gray-500 mt-6">No data available to display.</div>
+        </ng-template>
+    </div>`,
+    providers: [MessageService]
 })
 export class ChartsPage {
     pieData: any;
@@ -46,7 +56,8 @@ export class ChartsPage {
 
     constructor(
         private layoutService: LayoutService,
-        private categoryService: CategoryService
+        private categoryService: CategoryService,
+        private messageService: MessageService
     ) {
         this.subscription = this.layoutService.configUpdate$.pipe(debounceTime(25)).subscribe(() => {
             this.updateChartOptions();
@@ -79,10 +90,14 @@ export class ChartsPage {
             },
             error: (err) => {
                 console.error('Fetching categories for chart failed due to:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to load chart data'
+                });
             }
         });
     }
-
 
     updateChartOptions() {
         const documentStyle = getComputedStyle(document.documentElement);
@@ -113,13 +128,18 @@ export class ChartsPage {
         };
     }
 
-    ngOnDestroy() {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
-    }
-
     onTabChange(index: string | number) {
         this.activeTab = index;
     }
+
+
+    hasData(): boolean {
+        return this.pieData &&
+               this.pieData.datasets &&
+               this.pieData.datasets.length > 0 &&
+               this.pieData.datasets[0].data &&
+               this.pieData.datasets[0].data.length > 0 &&
+               this.pieData.datasets[0].data.some((val: number) => val > 0);
+    }
+
 }

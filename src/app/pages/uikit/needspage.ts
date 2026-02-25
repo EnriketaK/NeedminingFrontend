@@ -87,7 +87,7 @@ import { Menu } from 'primeng/menu';
                                 <div class="p-6 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded flex flex-col">
                                     <div class="flex flex-row justify-between items-start gap-2 mb-4">
                                         <div>
-                                            <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Last modified: {{ item.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
+                                            <div class="font-medium text-surface-500 dark:text-surface-400 text-sm block mb-4">Created on: {{ item.uploadedAt | date: 'yyyy-MM-dd HH:mm' }}</div>
                                             <div class="text-l font-medium mt-2 mb-2">Post: {{ item.post.title }}</div>
                                             <div class="text-lg font-bold mt-1">
                                                 {{ item.content }}
@@ -111,7 +111,7 @@ import { Menu } from 'primeng/menu';
                                     </div>
 
                                     <div class="p-1">
-                                        <p-button severity="secondary" [routerLink]="['/uikit', 'postdetail', item.post.id]" styleClass="flex-auto md:flex-initial whitespace-nowrap">
+                                        <p-button severity="secondary" [routerLink]="['/aineedminer', 'postdetail', item.post.id]" styleClass="flex-auto md:flex-initial whitespace-nowrap">
                                             Go to post
                                             <i class="pi pi-arrow-right"></i>
                                         </p-button>
@@ -180,11 +180,21 @@ export class NeedsPage {
     }
 
     loadNeeds() {
-        this.needService.getAllNeeds().subscribe((data) => {
-            this.needs = [...data].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-            this.filteredNeeds = [...this.needs];
-
-            this.firstPage = 0;
+        this.needService.getAllNeeds().subscribe({
+            next: (data) => {
+                this.needs = [...data].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+                // this.needs = [...data].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+                this.filteredNeeds = [...this.needs];
+                this.firstPage = 0;
+            },
+            error: (err) => {
+                console.error('Error loading needs:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Load Failed',
+                    detail: 'Failed to load needs'
+                });
+            }
         });
     }
 
