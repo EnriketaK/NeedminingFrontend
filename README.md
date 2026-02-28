@@ -25,8 +25,8 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 ## UI Overview
 
-![prototypeUiCategories1.png](..%2F..%2FDownloads%2Fmethodology%2FprototypeUiCategories1.png)
-![prototypeUiCharts1.png](..%2F..%2FDownloads%2Fmethodology%2FprototypeUiCharts1.png)
-![prototypeUiNeeds1.png](..%2F..%2FDownloads%2Fmethodology%2FprototypeUiNeeds1.png)
-![prototypeUiPostDetail1.png](..%2F..%2FDownloads%2Fmethodology%2FprototypeUiPostDetail1.png)
-![prototypeUiPosts1.png](..%2F..%2FDownloads%2Fmethodology%2FprototypeUiPosts1.png)
+![prototypeUiPosts1.png](./src/assets/readme/prototypeUiPosts1.png)
+![prototypeUiNeeds1.png](./src/assets/readme/prototypeUiNeeds1.png)
+![prototypeUiPostDetail1.png](./src/assets/readme/prototypeUiPostDetail1.png)
+![prototypeUiCategories1.png](./src/assets/readme/prototypeUiCategories1.png)
+![prototypeUiCharts1.png](./src/assets/readme/prototypeUiCharts1.png)
